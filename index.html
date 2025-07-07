@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link
+      rel="icon"
+      type="image/png"
+      href="favicon/favicon-96x96.png"
+      sizes="96x96"
+    />
+    <link rel="icon" type="image/svg+xml" href="favicon/favicon.svg" />
+    <link rel="shortcut icon" href="favicon/favicon.ico" />
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="favicon/apple-touch-icon.png"
+    />
+    <link rel="manifest" href="favicon/site.webmanifest" />
+    <title>cpolar穿透</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f9f9f9;
+        margin: 40px;
+        color: #333;
+      }
+
+      h1 {
+        text-align: center;
+        color: #222;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #0078d4;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      button:hover {
+        background-color: #005fa3;
+      }
+
+      button:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+
+      ul {
+        list-style: none;
+        padding-left: 0;
+        margin-top: 20px;
+      }
+
+      li {
+        background-color: #ffffff;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 6px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      code {
+        background-color: #f3f3f3;
+        padding: 2px 6px;
+        font-family: monospace;
+        border-radius: 3px;
+        display: inline-block;
+        margin-right: 10px;
+        max-width: 100%;
+        word-break: break-all;
+      }
+
+      .info {
+        flex: 1;
+        margin-right: 10px;
+      }
+
+      .copy-btn {
+        background-color: #4caf50;
+        border: none;
+        color: white;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      .copy-btn:hover {
+        background-color: #3e8e41;
+      }
+
+      .center {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      #toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background-color: #2ecc71; /* 默认颜色，JS 中可覆盖 */
+        color: white;
+        padding: 10px 16px;
+        border-radius: 6px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        font-size: 14px;
+        z-index: 1000;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #toast.show {
+        animation: fadeInOut 2.5s ease forwards;
+      }
+
+      @keyframes fadeInOut {
+        0% {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        10% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        90% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>cpolar穿透列表</h1>
+    <div class="center">
+      <button onclick="fetchData()" id="fetchBtn">点击获取隧道列表</button>
+    </div>
+    <div id="result"></div>
+    <div id="toast"></div>
+    <script>
+      function fetchData() {
+        const button = document.getElementById("fetchBtn");
+        button.disabled = true;
+        const originalText = button.innerText;
+        button.innerText = "获取中...";
+
+        fetch("/data")
+          .then((res) => res.json())
+          .then((list) => {
+            const container = document.getElementById("result");
+            let html = "<ul>";
+            for (let i = 0; i < list.length; i++) {
+              const t = list[i];
+              const copyId = "copy-" + i;
+              html +=
+                "<li>" +
+                '<div class="info">' +
+                "<b>" +
+                t.name +
+                "</b>: " +
+                '<code id="' +
+                copyId +
+                '">' +
+                (t.url && t.url.startsWith("http")
+                  ? '<a target="_blank" href="' + t.url + '">' + t.url + "</a>"
+                  : t.url) +
+                "</code> → " +
+                t.local +
+                "</div>" +
+                '<button class="copy-btn" onclick="copyToClipboard(\'' +
+                copyId +
+                "')\">复制</button>" +
+                "</li>";
+            }
+            html += "</ul>";
+            container.innerHTML = html;
+          })
+          .catch((err) => {
+            alert("获取失败：" + err);
+          })
+          .finally(() => {
+            button.disabled = false;
+            button.innerText = originalText;
+          });
+      }
+
+      function copyToClipboard(id) {
+        const text = document.getElementById(id).innerText;
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            showToast("复制成功: " + text);
+          })
+          .catch((err) => {
+            showToast("复制失败: " + err, true);
+          });
+      }
+
+      function showToast(message, type = "success") {
+        const toast = document.getElementById("toast");
+        toast.innerText = message;
+
+        // 设置颜色
+        switch (type) {
+          case "error":
+            toast.style.backgroundColor = "#e74c3c";
+            break;
+          case "info":
+            toast.style.backgroundColor = "#3498db";
+            break;
+          case "warning":
+            toast.style.backgroundColor = "#f39c12";
+            break;
+          default:
+            toast.style.backgroundColor = "#2ecc71";
+        }
+
+        toast.classList.remove("show"); // 清除之前的动画
+        void toast.offsetWidth; // 触发 reflow，强制重启动画
+        toast.classList.add("show");
+      }
+    </script>
+  </body>
+</html>
