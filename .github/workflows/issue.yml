@@ -20,15 +20,17 @@ jobs:
             TITLE="${{ github.event.issue.title }}"
             URL="${{ github.event.issue.html_url }}"
             USER="${{ github.event.issue.user.login }}"
-            CREATED_AT="${{ github.event.issue.created_at }}"
+            UTC_TIME="${{ github.event.issue.created_at }}"
             TYPE="Issue"
           else
             TITLE="${{ github.event.pull_request.title }}"
             URL="${{ github.event.pull_request.html_url }}"
             USER="${{ github.event.pull_request.user.login }}"
-            CREATED_AT="${{ github.event.pull_request.created_at }}"
+            UTC_TIME="${{ github.event.pull_request.created_at }}"
             TYPE="Pull Request"
           fi
+
+          CREATED_AT=$(TZ='Asia/Shanghai' date -d "$UTC_TIME" "+%Y-%m-%d %H:%M:%S")
 
           curl "$WECOM_WEBHOOK" \
             -H "Content-Type: application/json" \
