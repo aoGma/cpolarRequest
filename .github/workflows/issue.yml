@@ -1,7 +1,10 @@
-name: issue notify
+name: github notify
 
 on:
   issues:
+    types: [opened]
+
+  pull_request:
     types: [opened]
 
 jobs:
@@ -10,12 +13,28 @@ jobs:
 
     steps:
       - name: send wecom
+        env:
+          WECOM_WEBHOOK: ${{ secrets.WECOM_WEBHOOK }}
         run: |
-          curl 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=248bd62c-84bd-4ee2-ab80-3cddd2d8078a' \
-          -H 'Content-Type: application/json' \
-          -d '{
-            "msgtype": "markdown",
-            "markdown": {
-              "content": "# 新Issue\n> '${{ github.event.issue.title }}'\n\n${{ github.event.issue.html_url }}"
-            }
-          }'
+          if [ "${{ github.event_name }}" = "issues" ]; then
+            TITLE="${{ github.event.issue.title }}"
+            URL="${{ github.event.issue.html_url }}"
+            USER="${{ github.event.issue.user.login }}"
+            CREATED_AT="${{ github.event.issue.created_at }}"
+            TYPE="Issue"
+          else
+            TITLE="${{ github.event.pull_request.title }}"
+            URL="${{ github.event.pull_request.html_url }}"
+            USER="${{ github.event.pull_request.user.login }}"
+            CREATED_AT="${{ github.event.pull_request.created_at }}"
+            TYPE="Pull Request"
+          fi
+
+          curl "$WECOM_WEBHOOK" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"msgtype\": \"markdown\",
+              \"markdown\": {
+                \"content\": \"# GitHub 新${TYPE}\n> ${TITLE}\n\n创建人：${USER}\n创建时间：${CREATED_AT}\n\n[点击查看](${URL})\"
+              }
+            }"
