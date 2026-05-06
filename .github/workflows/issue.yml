@@ -1,0 +1,21 @@
+name: issue notify
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: send wecom
+        run: |
+          curl 'https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=248bd62c-84bd-4ee2-ab80-3cddd2d8078a' \
+          -H 'Content-Type: application/json' \
+          -d '{
+            "msgtype": "markdown",
+            "markdown": {
+              "content": "# 新Issue\n> '${{ github.event.issue.title }}'\n\n${{ github.event.issue.html_url }}"
+            }
+          }'
